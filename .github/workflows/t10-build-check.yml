@@ -54,6 +54,24 @@ jobs:
             "mingw-w64-${TOOLCHAIN}-opus" \
             "mingw-w64-${TOOLCHAIN}-toolchain"
 
+      - name: Install Doxygen
+        # CMake's find_package(Doxygen REQUIRED) gates configure on this.
+        # GCC-compiled doxygen has graphviz issues, so use the official build.
+        env:
+          DOXYGEN_VERSION: "1.11.0"
+        run: |
+          $doxy_ver = $env:DOXYGEN_VERSION
+          $_doxy_ver = $doxy_ver.Replace(".", "_")
+          Invoke-WebRequest -Uri `
+            "https://github.com/doxygen/doxygen/releases/download/Release_${_doxy_ver}/doxygen-${doxy_ver}-setup.exe" `
+            -OutFile "doxygen-setup.exe"
+          Start-Process `
+            -FilePath .\doxygen-setup.exe `
+            -ArgumentList '/VERYSILENT' `
+            -Wait `
+            -NoNewWindow
+          Remove-Item -Path doxygen-setup.exe
+
       - name: Setup python
         uses: actions/setup-python@v5
         with:
