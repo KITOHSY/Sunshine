@@ -129,6 +129,27 @@ namespace confighttp {
   }
 
   /**
+   * @brief Constant-time string comparison for auth-token matching.
+   *
+   * Avoids a timing oracle on the secret's contents. The length check is not
+   * constant-time, but the token length is not itself sensitive (fixed-length
+   * random secret).
+   * @param a First string.
+   * @param b Second string.
+   * @return True if the strings are equal.
+   */
+  bool constant_time_equals(const std::string &a, const std::string &b) {
+    if (a.size() != b.size()) {
+      return false;
+    }
+    volatile unsigned char diff = 0;
+    for (std::size_t i = 0; i < a.size(); ++i) {
+      diff |= static_cast<unsigned char>(a[i]) ^ static_cast<unsigned char>(b[i]);
+    }
+    return diff == 0;
+  }
+
+  /**
    * @brief Authenticate the user.
    * @param response The HTTP response object.
    * @param request The HTTP request object.
@@ -160,6 +181,22 @@ namespace confighttp {
     }
 
     auto &rawAuth = auth->second;
+
+    // SmartClassroom T10: Broker machine-to-machine auth via a static Bearer
+    // token. When the host is provisioned with `broker_api_token` in
+    // sunshine.conf, an `Authorization: Bearer <token>` request authenticates
+    // by constant-time comparison against that token -- no username/password
+    // needed. This enables headless calls such as POST /api/pin. The IP-origin
+    // gate above still applies; an empty key keeps this path disabled.
+    if (rawAuth.rfind("Bearer "sv, 0) == 0) {
+      const auto &expected = config::sunshine.broker_api_token;
+      if (!expected.empty() && constant_time_equals(rawAuth.substr("Bearer "sv.length()), expected)) {
+        fg.disable();
+        return true;
+      }
+      return false;  // Bearer scheme with a missing/invalid token -> 401
+    }
+
     auto authData = SimpleWeb::Crypto::Base64::decode(rawAuth.substr("Basic "sv.length()));
 
     int index = authData.find(':');

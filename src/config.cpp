@@ -570,6 +570,7 @@ namespace config {
     {},  // Username
     {},  // Password
     {},  // Password Salt
+    {},  // broker_api_token (T10)
     platf::appdata().string() + "/sunshine.conf",  // config file
     {},  // cmd args
     47989,  // Base port number
@@ -1153,6 +1154,9 @@ namespace config {
     // Must be run after "file_state"
     config::sunshine.credentials_file = config::nvhttp.file_state;
     path_f(vars, "credentials_file", config::sunshine.credentials_file);
+
+    // SmartClassroom T10: static Bearer token for Broker machine-to-machine auth.
+    string_f(vars, "broker_api_token", config::sunshine.broker_api_token);
 
     string_f(vars, "external_ip", nvhttp.external_ip);
     list_prep_cmd_f(vars, "global_prep_cmd", config::sunshine.prep_cmds);
