@@ -241,6 +241,10 @@ namespace config {
     std::string password;
     std::string salt;
 
+    // SmartClassroom T10: static Bearer token for Broker machine-to-machine
+    // calls to the config API (e.g. headless POST /api/pin). Empty = disabled.
+    std::string broker_api_token;
+
     std::string config_file;
 
     struct cmd_t {
